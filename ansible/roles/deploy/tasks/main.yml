@@ -1,0 +1,54 @@
+---
+- name: Create project directory
+  ansible.builtin.file:
+    path: "{{ project_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Copy docker-compose.yml from template
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ project_dir }}/docker-compose.yml"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Copy .env from template
+  ansible.builtin.template:
+    src: .env.j2
+    dest: "{{ project_dir }}/.env"
+    owner: root
+    group: root
+    mode: "0600"
+
+- name: Copy nginx.conf from template
+  ansible.builtin.template:
+    src: nginx.conf.j2
+    dest: "{{ project_dir }}/nginx.conf"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Start containers with Docker Compose
+  ansible.builtin.command: docker compose up -d --remove-orphans
+  args:
+    chdir: "{{ project_dir }}"
+  register: compose_up
+  changed_when: "'Started' in compose_up.stdout or 'Created' in compose_up.stdout or 'Recreated' in compose_up.stdout or 'Running' in compose_up.stdout"
+
+- name: Show Docker Compose output
+  ansible.builtin.debug:
+    var: compose_up.stdout_lines
+
+- name: Check running containers
+  ansible.builtin.command: docker compose ps
+  args:
+    chdir: "{{ project_dir }}"
+  register: compose_ps
+  changed_when: false
+
+- name: Print running containers
+  ansible.builtin.debug:
+    var: compose_ps.stdout_lines

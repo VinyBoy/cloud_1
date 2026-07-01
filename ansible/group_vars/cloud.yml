@@ -1,0 +1,9 @@
+--- #gestion basique des secrets
+project_dir: /opt/cloud-1
+
+mysql_database: wordpress
+mysql_user: wp_user
+mysql_password: change_me_wp_password
+mysql_root_password: change_me_root_password
+
+wordpress_db_host: mariadb:3306

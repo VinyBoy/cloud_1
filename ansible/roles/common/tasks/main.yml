@@ -1,0 +1,24 @@
+---
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+  
+- name: Install base packages
+  ansible.builtin.apt:
+    name:
+      - curl
+      - git
+      - unzip
+      - ca-certificates
+      - gnupg
+      - lsb-release
+    state: present
+
+- name: Create project directory
+  ansible.builtin.file:
+    path: /opt/cloud-1
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
