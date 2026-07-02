@@ -57,15 +57,24 @@
     mode: "0644"
   when: letsencrypt_cert.stat.exists
 
+- name: Copy Docker build contexts
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../docker/"
+    dest: "{{ project_dir }}/docker/"
+    owner: root
+    group: root
+    mode: preserve
+
 - name: Start containers with Docker Compose
-  ansible.builtin.command: docker compose up -d --remove-orphans
+  ansible.builtin.command: docker compose up -d --build --remove-orphans
   args:
     chdir: "{{ project_dir }}"
   register: compose_up
   changed_when: >
     'Started' in compose_up.stdout or
     'Created' in compose_up.stdout or
-    'Recreated' in compose_up.stdout
+    'Recreated' in compose_up.stdout or
+    'Building' in compose_up.stdout
 
 - name: Obtain initial Let's Encrypt certificate
   ansible.builtin.command: >

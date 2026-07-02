@@ -17,8 +17,49 @@
 
 - name: Create project directory
   ansible.builtin.file:
-    path: /opt/cloud-1
+    path: "{{ project_dir }}"
     state: directory
     owner: root
     group: root
     mode: "0755"
+
+- name: Create secrets directory
+  ansible.builtin.file:
+    path: "{{ project_dir }}/secrets"
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+
+- name: Create db root password secret
+  ansible.builtin.copy:
+    content: "{{ mysql_root_password }}"
+    dest: "{{ project_dir }}/secrets/db_root_password.txt"
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: true
+
+- name: Create db password secret
+  ansible.builtin.copy:
+    content: "{{ mysql_password }}"
+    dest: "{{ project_dir }}/secrets/db_password.txt"
+    owner: root
+    group: root
+    mode: "0600"
+
+- name: Create WordPress admin password secret
+  ansible.builtin.copy:
+    content: "{{ wp_admin_password }}"
+    dest: "{{ project_dir }}/secrets/wp_admin_password.txt"
+    owner: root
+    group: root
+    mode: "0600"
+
+- name: Create WordPress user password secret
+  ansible.builtin.copy:
+    content: "{{ wp_user_password }}"
+    dest: "{{ project_dir }}/secrets/wp_user_password.txt"
+    owner: root
+    group: root
+    mode: "0600"
