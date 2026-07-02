@@ -654,3 +654,14 @@ Un cron renouvelle automatiquement le certificat.
 ```
 
 C’est une explication claire et défendable pour Cloud-1.
+
+ssh root@51.159.155.247
+
+cd /opt/cloud-1
+DB_PWD=$(cat /opt/cloud-1/secrets/db_password.txt)
+docker compose exec mariadb mariadb -u wp_user -p"$DB_PWD" wordpress
+
+SELECT comment_ID, comment_author, comment_content
+FROM wp_comments
+ORDER BY comment_ID DESC
+LIMIT 5;
