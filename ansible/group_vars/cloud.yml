@@ -1,6 +1,9 @@
 --- #gestion basique des secrets
 project_dir: /opt/cloud-1
 
+domain_name: cloud-one-vnieto-j.duckdns.org
+letsencrypt_email: victornieto-juan@live.fr
+
 mysql_database: wordpress
 mysql_user: wp_user
 mysql_password: change_me_wp_password

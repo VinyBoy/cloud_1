@@ -7,6 +7,17 @@
     group: root
     mode: "0755"
 
+- name: Create Certbot directories
+  ansible.builtin.file:
+    path: "{{ project_dir }}/certbot/{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  loop:
+    - www
+    - conf
+
 - name: Copy docker-compose.yml from template
   ansible.builtin.template:
     src: docker-compose.yml.j2
@@ -23,24 +34,75 @@
     group: root
     mode: "0600"
 
-- name: Copy nginx.conf from template
+- name: Check if Let's Encrypt certificate already exists
+  ansible.builtin.stat:
+    path: "{{ project_dir }}/certbot/conf/live/{{ domain_name }}/fullchain.pem"
+  register: letsencrypt_cert
+
+- name: Copy temporary HTTP nginx config before first certificate
   ansible.builtin.template:
-    src: nginx.conf.j2
+    src: nginx-http.conf.j2
     dest: "{{ project_dir }}/nginx.conf"
     owner: root
     group: root
     mode: "0644"
+  when: not letsencrypt_cert.stat.exists
+
+- name: Copy HTTPS nginx config if certificate already exists
+  ansible.builtin.template:
+    src: nginx-https.conf.j2
+    dest: "{{ project_dir }}/nginx.conf"
+    owner: root
+    group: root
+    mode: "0644"
+  when: letsencrypt_cert.stat.exists
 
 - name: Start containers with Docker Compose
   ansible.builtin.command: docker compose up -d --remove-orphans
   args:
     chdir: "{{ project_dir }}"
   register: compose_up
-  changed_when: "'Started' in compose_up.stdout or 'Created' in compose_up.stdout or 'Recreated' in compose_up.stdout or 'Running' in compose_up.stdout"
+  changed_when: >
+    'Started' in compose_up.stdout or
+    'Created' in compose_up.stdout or
+    'Recreated' in compose_up.stdout
 
-- name: Show Docker Compose output
-  ansible.builtin.debug:
-    var: compose_up.stdout_lines
+- name: Obtain initial Let's Encrypt certificate
+  ansible.builtin.command: >
+    docker run --rm
+    -v {{ project_dir }}/certbot/www:/var/www/certbot
+    -v {{ project_dir }}/certbot/conf:/etc/letsencrypt
+    certbot/certbot certonly
+    --webroot
+    --webroot-path=/var/www/certbot
+    --email {{ letsencrypt_email }}
+    --agree-tos
+    --no-eff-email
+    -d {{ domain_name }}
+  when: not letsencrypt_cert.stat.exists
+  register: certbot_result
+  changed_when: certbot_result.rc == 0
+
+- name: Copy final HTTPS nginx config after certificate creation
+  ansible.builtin.template:
+    src: nginx-https.conf.j2
+    dest: "{{ project_dir }}/nginx.conf"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Restart nginx after nginx config update
+  ansible.builtin.command: docker compose restart nginx
+  args:
+    chdir: "{{ project_dir }}"
+  changed_when: true
+
+- name: Add cron job for Let's Encrypt renewal
+  ansible.builtin.cron:
+    name: "Renew Cloud-1 Let's Encrypt certificate"
+    minute: "0"
+    hour: "3"
+    job: "cd {{ project_dir }} && docker run --rm -v {{ project_dir }}/certbot/www:/var/www/certbot -v {{ project_dir }}/certbot/conf:/etc/letsencrypt certbot/certbot renew --quiet && docker compose exec -T nginx nginx -s reload"
 
 - name: Check running containers
   ansible.builtin.command: docker compose ps
