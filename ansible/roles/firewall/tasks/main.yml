@@ -1,0 +1,51 @@
+---
+- name: Install UFW
+  ansible.builtin.apt:
+    name: ufw
+    state: present
+    update_cache: true
+
+- name: Set default incoming policy to deny
+  ansible.builtin.command: ufw default deny incoming
+  register: ufw_default_incoming
+  changed_when: "'Default incoming policy changed' in ufw_default_incoming.stdout"
+
+- name: Set default outgoing policy to allow
+  ansible.builtin.command: ufw default allow outgoing
+  register: ufw_default_outgoing
+  changed_when: "'Default outgoing policy changed' in ufw_default_outgoing.stdout"
+
+- name: Allow OpenSSH
+  ansible.builtin.command: ufw allow OpenSSH
+  register: ufw_allow_ssh
+  changed_when: "'Rule added' in ufw_allow_ssh.stdout"
+
+- name: Allow HTTP port 80
+  ansible.builtin.command: ufw allow 80/tcp
+  register: ufw_allow_http
+  changed_when: "'Rule added' in ufw_allow_http.stdout"
+
+- name: Allow HTTPS port 443
+  ansible.builtin.command: ufw allow 443/tcp
+  register: ufw_allow_https
+  changed_when: "'Rule added' in ufw_allow_https.stdout"
+
+- name: Check UFW status
+  ansible.builtin.command: ufw status
+  register: ufw_status
+  changed_when: false
+
+- name: Enable UFW
+  ansible.builtin.command: ufw --force enable
+  when: "'Status: inactive' in ufw_status.stdout"
+  register: ufw_enable
+  changed_when: "'Firewall is active' in ufw_enable.stdout"
+
+- name: Show UFW status
+  ansible.builtin.command: ufw status verbose
+  register: ufw_status_verbose
+  changed_when: false
+
+- name: Print UFW status
+  ansible.builtin.debug:
+    var: ufw_status_verbose.stdout_lines

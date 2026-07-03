@@ -1,0 +1,9 @@
+- name: Deploy Cloud-1 infrastucture #Nom du playbook
+  hosts: cloud #cible les hosts cloud dans le inventory
+  become: true #droit admin sur vps
+
+  roles:
+    - common #update, paquetes de bases, timezones, dossiers
+    - docker #installation Docker + Docker compose plugin
+    - firewall #UFW, port 22/80/443
+    - deploy #copie des fichiers docker compose + .env + nginx + conteneur

@@ -1,0 +1,101 @@
+services:
+  mariadb:
+    build:
+      context: ./docker/mariadb
+    image: cloud1_mariadb:local
+    container_name: cloud1_mariadb
+    restart: unless-stopped
+
+    environment:
+      MYSQL_DATABASE: "{{ mysql_database }}"
+      MYSQL_USER: "{{ mysql_user }}"
+
+    secrets:
+      - db_root_password
+      - db_password
+
+    volumes:
+      - mariadb_data:/var/lib/mysql
+
+    networks:
+      - cloud1_internal
+
+  wordpress:
+    build:
+      context: ./docker/wordpress
+    image: cloud1_wordpress:local
+    container_name: cloud1_wordpress
+    restart: unless-stopped
+
+    depends_on:
+      - mariadb
+
+    environment:
+      DOMAIN_NAME: "{{ domain_name }}"
+      MYSQL_DATABASE: "{{ mysql_database }}"
+      MYSQL_USER: "{{ mysql_user }}"
+
+      WP_TITLE: "{{ wp_title }}"
+      WP_ADMIN_USER: "{{ wp_admin_user }}"
+      WP_ADMIN_EMAIL: "{{ wp_admin_email }}"
+      WP_USER: "{{ wp_user }}"
+      WP_USER_EMAIL: "{{ wp_user_email }}"
+
+    secrets:
+      - db_password
+      - wp_admin_password
+      - wp_user_password
+
+    volumes:
+      - wordpress_data:/var/www/html
+
+    networks:
+      - cloud1_internal
+
+  nginx:
+    build:
+      context: ./docker/nginx
+    image: cloud1_nginx:local
+    container_name: cloud1_nginx
+    restart: unless-stopped
+
+    depends_on:
+      - wordpress
+
+    environment:
+      DOMAIN_NAME: "{{ domain_name }}"
+
+    ports:
+      - "80:80"
+      - "443:443"
+
+    volumes:
+      - wordpress_data:/var/www/html:ro
+
+      # Certbot / Let's Encrypt
+      - ./certbot/www:/var/www/certbot:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+
+    networks:
+      - cloud1_internal
+
+volumes:
+  mariadb_data:
+  wordpress_data:
+
+networks:
+  cloud1_internal:
+    driver: bridge
+
+secrets:
+  db_root_password:
+    file: ./secrets/db_root_password.txt
+
+  db_password:
+    file: ./secrets/db_password.txt
+
+  wp_admin_password:
+    file: ./secrets/wp_admin_password.txt
+
+  wp_user_password:
+    file: ./secrets/wp_user_password.txt
