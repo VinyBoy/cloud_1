@@ -1,9 +1,9 @@
 INVENTORY = ansible/inventory.ini
 PLAYBOOK = ansible/playbook.yml
 HOST = cloud
-VPS = root@212.227.191.77
+VPS = root@51.159.167.75
 PROJECT_DIR = /opt/cloud-1
-SSH_KEY = /home/viny/.ssh/cloud1_vps_ed25519
+SSH_KEY = /home/vnieto-j/.ssh/id_rsa
 SSH_OPTIONS = -o IdentitiesOnly=yes -i $(SSH_KEY)
 
 .PHONY: help ping deploy deploy-vault syntax inventory ssh ps logs restart

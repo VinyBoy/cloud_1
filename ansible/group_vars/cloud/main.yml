@@ -3,7 +3,7 @@
 
 project_dir: /opt/cloud-1
 
-domain_name: "cloud-one-vnieto-j.duckdns.org"
+domain_name: "cloud-one-nadgalle-vnieto-j.duckdns.org"
 letsencrypt_email: "victornieto-juan@live.fr"
 
 mysql_database: "wordpress"
